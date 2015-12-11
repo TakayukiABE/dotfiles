@@ -1,9 +1,17 @@
+(add-hook 'doc-view-mode-hook
+	  '(lambda()(and (fboundp 'linum-mode) (linum-mode 0))))
+(add-hook 'pdf-view-mode-hook
+	  '(lambda()(and (fboundp 'linum-mode) (linum-mode 0))))
+
 ;; load-path
 (add-to-list 'load-path "~/.emacs.d/elpa/yatex.el/")
 (add-to-list 'load-path (expand-file-name "~/.emacs.d/elpa/realtime-preview.el/"))
 
 ;; 改行時に\\を表示しない
 (set-display-table-slot standard-display-table 'wrap ? )
+
+;; C-hをbackspaceとして用いる
+(keyboard-translate ?\C-h ?\C-?)
 
 ;; エンコーディング設定
 (set-language-environment  'utf-8)
@@ -78,8 +86,24 @@
 (global-set-key (kbd "C-c n") 'multi-term-next)
 (global-set-key (kbd "C-c p") 'multi-term-prev)
 
+;; 1行ずつスクロール
+(setq scroll-conservatively 35
+      scroll-margin 0
+      scroll-step 1)
+(setq comint-scroll-show-maximum-output t) ;; shell-mode
+
+;; yes or noをy or n
+(fset 'yes-or-no-p 'y-or-n-p)
+
 ;; 現在行を目立たせる
 (global-hl-line-mode)
+
+;;multiple-cursors
+(require 'multiple-cursors)
+(global-set-key (kbd "C->") 'mc/mark-next-like-this)
+(global-set-key (kbd "C-M->") 'mc/skip-to-next-like-this)
+(global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
 
 ;; 対応する括弧のハイライト
 (show-paren-mode t)
@@ -87,7 +111,7 @@
 
 ;; 行番号の設定（F5 キーで表示・非表示を切り替え）
 (require 'linum)
-(global-linum-mode t)
+(global-linum-mode)
 (global-set-key [f5] 'linum-mode)
 (setq linum-format
       (lambda (line) (propertize (format
@@ -99,11 +123,15 @@
 ;;; 行番号の桁数を可変にする場合
 ;;;(setq linum-format "%d ")
 
+(require 'minimap)
+(setq minimap-window-location 'right)
+
+
 ;; バックアップファイルを生成しない
 (setq make-backup-files nil)
-
+()
 ;; M-yでkill-ringのヒストリから選択してyank
-(global-set-key (kbd "M-y") 'browse-kill-ring)
+;;(global-set-key (kbd "M-y") 'browse-kill-ring)
 
 ;;OSXのClipboardとEmacsのkill-ringを同期
 ;;http://blog.lathi.net/articles/2007/11/07/sharing-the-mac-clipboard-with-emacs
@@ -124,10 +152,19 @@
 (setq auto-mode-alist
       (cons (cons "\\.tex$" 'yatex-mode) auto-mode-alist))
 ;;; sectionカラーの設定
-(setq YaTeX-hilit-sectioning-face '(DarkGreen/azure1 azure/azure))
+(setq YaTeX-hilit-sectioning-face '(White/azure1 White/White))
+;;(setq YaTeX-hilit-sectioning-face '(darkblue/LightGray LightGray/Black))
 ;;; YaTeX-mode時はautopair-modeをオフに
 (add-hook 'yatex-mode-hook
 	  '(lambda()(and (fboundp 'autopair-mode) (autopair-mode 0))))
+
+;;flycheck-mode
+(require 'flycheck)
+(add-hook 'after-init-hook #'global-flycheck-mode)
+;;あとでflycheck-next-errorとflycheck-previous-errorのキーを定義しておく
+(eval-after-load 'flycheck
+  '(custom-set-variables
+    '(flycheck-display-errors-function #'flycheck-pos-tip-error-messages)))
 
 ;; PATHの共有
 (load-file (expand-file-name "~/.emacs.d/shellenv.el"))
@@ -183,8 +220,11 @@
 
 ;; 入力補完
 (require 'auto-complete)
-(require 'auto-complete-config)    ; 必須ではないですが一応
+(require 'auto-complete-config) 
 (global-auto-complete-mode t)
+(define-key ac-completing-map (kbd "C-n") 'ac-next)
+(define-key ac-completing-map (kbd "C-p") 'ac-previous)
+(define-key ac-completing-map (kbd "C-m") 'ac-complete)
 
 ;; elispのインストールを簡単に
 (require 'auto-install)
